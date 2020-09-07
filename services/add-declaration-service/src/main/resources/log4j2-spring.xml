@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="%style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable"/>
+        </Console>
+
+        <Socket name="SocketStream" host="${env:LOGSTASH_HOST:-localhost}" port="${env:LOGSTASH_PORT:-5000}">
+            <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
+                <KeyValuePair key="app" value="${env:APP_NAME}"/>
+            </JsonLayout>
+        </Socket>
+
+        <Async name="Async" shutdownTimeout="900000">
+            <AppenderRef ref="SocketStream"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+
+        <Logger name="com.ee.declaration" level="${env.LOG_LEVEL:-info}" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Async"/>
+        </Logger>
+    </Loggers>
+
+</Configuration>

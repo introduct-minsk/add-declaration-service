@@ -1,0 +1,75 @@
+version: '2.1'
+
+services:
+  database:
+    container_name: consent-database
+    image: ${dockerRegistry}postgres:9.6.12
+    working_dir: /application
+    environment:
+      - POSTGRES_USER=${DATABASE_USERNAME:-service}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-servicepass123}
+      - POSTGRES_DB=${DATABASE_NAME:-service}
+      - PGDATA=/data/postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-service}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6432:5432"
+    networks:
+      consent-network:
+        aliases:
+          - database
+
+  add-declaration-service:
+    image: ${dockerRegistry}${dockerImage:-add-declaration-service}:${dockerTag:-latest}
+    restart: always
+    environment:
+      - PROFILE=dev
+      - LOG_LEVEL=info
+      - APP_NAME=add-declaration-service
+      - SERVER_PORT=${SERVER_PORT:-8443}
+      - DATABASE_HOST=${DATABASE_HOST:-database}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-service}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-service}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-servicepass123}
+      - SSL_KEY_STORE=${SSL_KEY_STORE:-file:/var/certificate.jks}
+      - SSL_KEY_STORE_TYPE=${SSL_KEY_STORE_TYPE:-PKCS12}
+      - SSL_KEY_STORE_PASSWORD=${SSL_KEY_STORE_PASSWORD:-secret}
+      - SSL_KEY_PASSWORD=${SSL_KEY_PASSWORD:-secret}
+      - SSL_KEY_ALIAS=${SSL_KEY_ALIAS:-localhost}
+    volumes:
+      - ./config/certificate.jks:/var/certificate.jks
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "https://localhost:8443/api/v1/actuator/health"]
+      timeout: 60s
+      interval: 10s
+    depends_on:
+      - database
+    networks:
+      consent-network:
+        aliases:
+          - add-declaration-service
+
+  lb: 
+    image: ${dockerRegistry}nginx:alpine
+    container_name: consent-nginx
+    volumes:
+      - ./config/nginx_https.conf:/etc/nginx/nginx.conf
+    ports:
+      - 443:31524
+    depends_on:
+      - add-declaration-service
+    networks:
+      consent-network:
+        aliases:
+          - lb        
+
+volumes:
+  database:
+
+networks:
+  consent-network:
+    name: consent-network    

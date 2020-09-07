@@ -1,0 +1,19 @@
+version: '2.1'
+
+services:
+  add-declaration-service:
+    container_name: add-declaration-service
+    image: add-declaration-service:latest
+    build:
+      context: .
+      dockerfile: services/add-declaration-service/Dockerfile
+    environment:
+      - PROFILE=local
+      - LOG_LEVEL=info
+    restart: always
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/actuator/health"]
+      timeout: 60s
+      interval: 10s

@@ -1,0 +1,23 @@
+server:
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEY_STORE}
+    key-store-type: ${SSL_KEY_STORE_TYPE}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-password: ${SSL_KEY_PASSWORD}
+    key-alias: ${SSL_KEY_ALIAS}
+  http2:
+    enabled: true
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    show-sql: false
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQL9Dialect
+    hibernate:
+      ddl-auto: update
